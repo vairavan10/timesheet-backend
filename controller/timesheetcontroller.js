@@ -1,52 +1,116 @@
 const TimeSheet = require("../models/timesheet");
 const mongoose = require("mongoose"); // ✅ Import Mongoose
 
-// ✅ Create Timesheet with Email
-
-
 const createTimeSheet = async (req, res) => {
   try {
-    const { date, name, project, hours, workDone, activity, email } = req.body;
+    const {
+      date,
+      name,
+      project,
+      hours,
+      workDone,
+      extraActivity,
+      email,
+      typeOfWork,
+      leaveType
+    } = req.body;
 
-    console.log("Received request body:", req.body);  // 🔍 Log request data
+    console.log("Received request body:", req.body);
 
-    if (!date || !name || !project || !hours || !workDone || activity || !email) {
-      return res.status(400).json({ message: "All fields are required, including email" });
+    // Validate common fields
+    if (!date || !name || !email) {
+      return res.status(400).json({ message: "Missing required fields (date, name, email)" });
     }
 
-    // 🔍 Log project ID before validation
-    console.log("Received Project ID:", project);
+    const normalizedType = (typeOfWork || "").trim().toLowerCase();
+    const normalizedLeaveType = (leaveType || "").trim().toLowerCase();
 
-    // ✅ Validate and Convert Project ID
-    if (!mongoose.Types.ObjectId.isValid(project)) {
-      return res.status(400).json({ message: "Invalid project ID format" });
+    // ----------------------
+    // 🟥 LEAVE
+    // ----------------------
+    if (normalizedType === "leave") {
+      if (!["half", "full", "half day", "full day"].includes(normalizedLeaveType)) {
+        return res.status(400).json({ message: "Leave type must be 'Half Day' or 'Full Day'" });
+      }
+
+      const leaveHours = ["half", "half day"].includes(normalizedLeaveType) ? 4 : 8;
+      const finalLeaveLabel = leaveHours === 4 ? "Half Day" : "Full Day";
+
+      const newTimeSheet = new TimeSheet({
+        date,
+        name,
+        email,
+        hours: 0,
+        workDone: workDone || "On Leave",
+        typeOfWork: "Leave",
+        leaveType: finalLeaveLabel,
+        project: null,
+        extraActivity: null,
+      });
+
+      await newTimeSheet.save();
+
+      return res.status(201).json({
+        message: `Timesheet for ${finalLeaveLabel} leave created successfully`,
+        data: newTimeSheet,
+      });
     }
 
-    // ✅ Convert project ID to ObjectId
-    const projectId = new mongoose.Types.ObjectId(project);
+    // ----------------------
+    // 🟩 REGULAR / EXTRA ACTIVITY
+    // ----------------------
+    if (!hours || !workDone) {
+      return res.status(400).json({ message: "Missing hours or workDone for regular entry" });
+    }
+    
+    // ❌ Disallow 0 hours if it's not a leave
+    if (Number(hours) <= 0) {
+      return res.status(400).json({
+        message: "Hours must be greater than 0 for Regular Work or Extra Activity",
+      });
+    }
+    if (!project && !extraActivity) {
+      return res.status(400).json({ message: "Either Project or Extra Activity must be filled" });
+    }
+
+    let projectId = null;
+    if (project) {
+      if (!mongoose.Types.ObjectId.isValid(project)) {
+        return res.status(400).json({ message: "Invalid project ID format" });
+      }
+      projectId = new mongoose.Types.ObjectId(project);
+    }
+
+    // Dynamically decide the type
+    let finalTypeOfWork = "Regular Work";
+    if (!project && extraActivity) {
+      finalTypeOfWork = "Extra Activity";
+    }
 
     const newTimeSheet = new TimeSheet({
       date,
       name,
-      project: projectId,  // ✅ Store as ObjectId
+      project: projectId,
       hours,
       workDone,
-      activity,
+      extraActivity: extraActivity || null,
       email,
+      typeOfWork: finalTypeOfWork,
+      leaveType: null,
     });
 
     await newTimeSheet.save();
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "Timesheet created successfully",
       data: newTimeSheet,
     });
+
   } catch (error) {
     console.error("Error creating timesheet:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
 
 
 // ✅ Fetch All Timesheets (With Pagination & Sorting)
@@ -58,18 +122,23 @@ const getAllTimeSheets = async (req, res) => {
 
     const skip = (page - 1) * limit;
 
-    // Fetch all timesheets and populate project details
     const timeSheets = await TimeSheet.find()
-      .populate("project", "name") // ✅ Populating Project Name
+      .populate("project", "name")
       .skip(skip)
       .limit(limit)
       .sort({ date: -1 });
 
     const totalCount = await TimeSheet.countDocuments();
 
+    // ✅ Add isLeave flag
+    const enrichedSheets = timeSheets.map((sheet) => ({
+      ...sheet._doc,
+      isLeave: sheet.typeOfWork === "Leave",
+    }));
+
     res.status(200).json({
       message: "All timesheets fetched successfully",
-      data: timeSheets,
+      data: enrichedSheets,
       total: totalCount,
       page,
       limit,
@@ -92,17 +161,27 @@ const getUserTimeSheets = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const timeSheets = await TimeSheet.find({ email })
-    
-      .populate("project", "name") // ✅ Populate Project Details
+      .populate("project", "name")
       .skip(skip)
       .limit(parseInt(limit))
       .sort({ date: -1 });
 
     const totalCount = await TimeSheet.countDocuments({ email });
 
+    // ✅ Add isLeave flag
+    const enrichedSheets = timeSheets.map((sheet) => {
+      const isLeave = sheet.typeOfWork === "Leave";
+      return {
+        ...sheet._doc,
+        isLeave,
+        displayHours: isLeave ? (sheet.leaveType || "Leave") : `${sheet.hours} hrs`,
+      };
+    });
+    
+
     res.status(200).json({
       message: "User's timesheets fetched successfully",
-      data: timeSheets,
+      data: enrichedSheets,
       total: totalCount,
       page: parseInt(page),
       limit: parseInt(limit),
@@ -122,21 +201,71 @@ const getUserTotalHours = async (req, res) => {
       return res.status(400).json({ message: "Email is required to fetch total hours" });
     }
 
-    // Aggregate total hours worked by the user
+    // Include Regular Work and Extra Activity (exclude leaves or others)
     const totalHours = await TimeSheet.aggregate([
-      { $match: { email } },
-      { $group: { _id: null, totalHours: { $sum: "$hours" } } },
+      {
+        $match: {
+          email,
+          typeOfWork: { $in: ["Regular Work", "Extra Activity"] } // ✅ include both
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalHours: { $sum: "$hours" }
+        }
+      }
     ]);
 
     res.status(200).json({
-      message: "Total hours fetched successfully",
-      totalHours: totalHours.length > 0 ? totalHours[0].totalHours : 0,
+      message: "Total hours (Regular + Extra Activity) fetched successfully",
+      totalHours: totalHours.length > 0 ? totalHours[0].totalHours : 0
     });
   } catch (error) {
     console.error("Error fetching total hours:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+
+const getUserProjectHours = async (req, res) => {
+  try {
+    const { email } = req.query;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required to fetch total project hours" });
+    }
+
+    const totalProjectHours = await TimeSheet.aggregate([
+      {
+        $match: {
+          email,
+          typeOfWork: "Regular Work", // ✅ Exclude leaves
+          $or: [
+            { extraActivity: { $exists: false } },
+            { extraActivity: { $in: [null, ""] } }
+          ]
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalHours: { $sum: "$hours" }
+        }
+      }
+    ]);
+
+    res.status(200).json({
+      message: "Total project hours fetched successfully",
+      projectHours: totalProjectHours.length > 0 ? totalProjectHours[0].totalHours : 0
+    });
+  } catch (error) {
+    console.error("Error fetching total project hours:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+
 
 // ✅ Get Project's Total Hours Worked
 const getProjectTotalHours = async (req, res) => {
@@ -236,4 +365,5 @@ module.exports = {
   getUserTotalHours,
   getProjectTotalHours,
   getProjectUtilization,
+  getUserProjectHours,
 };

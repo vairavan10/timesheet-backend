@@ -47,7 +47,7 @@ exports.getAvailableDateRanges = async (req, res) => {
       const dateRanges = await ProjectDetails.find({ projectId }).select("fromDate toDate -_id").sort({ fromDate: 1 });
   
       if (!dateRanges.length) {
-        return res.status(404).json({ message: "No available date ranges found for this project." });
+        return res.status(200).json({ message: "No available date ranges found for this project." });
       }
   
       res.status(200).json(dateRanges);
@@ -64,7 +64,7 @@ exports.getAvailableDateRanges = async (req, res) => {
         .sort({ fromDate: -1 });
   
       if (!dateRanges.length) {
-        return res.status(404).json({ message: "No available date ranges found." });
+        return res.status(200).json({ message: "No available date ranges found." });
       }
   
       // Optional: Remove duplicates (if needed)
@@ -107,7 +107,7 @@ exports.getAvailableDateRanges = async (req, res) => {
       console.log("Query result:", report);
   
       if (!report) {
-        return res.status(404).json({ message: "No report found for the selected date range." });
+        return res.status(200).json({ message: "No report found for the selected date range." });
       }
   
       res.status(200).json(report);
@@ -126,7 +126,7 @@ exports.getLatestProjectReport = async (req, res) => {
     const latestReport = await ProjectDetails.findOne({ projectId }).sort({ toDate: -1 });
 
     if (!latestReport) {
-      return res.status(404).json({ message: "No reports found for this project." });
+      return res.status(200).json({ message: "No reports found for this project." });
     }
 
     res.status(200).json(latestReport);

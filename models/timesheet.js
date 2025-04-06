@@ -3,26 +3,47 @@ const mongoose = require('mongoose');
 const timeSheetSchema = new mongoose.Schema({
   date: {
     type: Date,
-    required: true
+    required: true,
   },
   name: {
     type: String,
-    required: true
+    required: true,
   },
-  project: { type: mongoose.Schema.Types.ObjectId, ref: "Project", required: true }, // ⬅️ Use ObjectId
+  project: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Project',
+    required: function () {
+      return this.typeOfWork === 'Regular Work' && !this.extraActivity;
+    },
+  },
   hours: {
     type: Number,
-    required: true
+    required: true,
   },
   workDone: {
     type: String,
-    required: true
+    required: true,
   },
-  email: {  // ✅ Added email field
+  email: {
     type: String,
-    
+    required: true,
   },
-  activity: { type: String, required: true }
+  extraActivity: {
+    type: String,
+    required: function () {
+      return this.typeOfWork === 'Regular Work' && !this.project;
+    },
+  },
+  typeOfWork: { 
+    type: String, 
+    enum: ['Regular Work', 'Leave' ,'Extra Activity'], 
+    default: 'Regular Work' 
+  },
+  leaveType: { 
+    type: String, 
+    enum: ['Half Day', 'Full Day'], 
+    default: null 
+  }
 });
 
 module.exports = mongoose.model('TimeSheet', timeSheetSchema);

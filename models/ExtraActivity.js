@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const extraActivitySchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true,
+    required: false,
     trim: true
   },
   createdBy: {
