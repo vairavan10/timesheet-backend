@@ -69,5 +69,38 @@ const getEmployeeCount = async (req, res) => {
     res.status(500).json({ message: 'Error fetching employee count', error });
   }
 };
+// Change employee password
+const changeEmployeePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const employeeId = req.params.id;
 
-module.exports = { addEmployee, getEmployees, getEmployeeCount,getEmployeeById };
+    // Find the employee by ID
+    const employee = await Employee.findById(employeeId);
+    if (!employee) {
+      return res.status(404).json({ message: 'Employee not found' });
+    }
+
+    // Check current password
+    if (employee.password !== currentPassword) {
+      return res.status(400).json({ message: 'Incorrect current password' });
+    }
+
+    // Prevent using the same password again
+    if (currentPassword === newPassword) {
+      return res.status(400).json({ message: 'New password must be different from the current password' });
+    }
+
+    // Update password
+    employee.password = newPassword;
+    await employee.save();
+
+    res.status(200).json({ message: 'Password updated successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error changing password', error });
+  }
+};
+
+
+
+module.exports = { addEmployee, getEmployees, getEmployeeCount,getEmployeeById,changeEmployeePassword };

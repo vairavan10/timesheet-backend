@@ -143,3 +143,37 @@ exports.getTeamByManager = async (req, res) => {
       res.status(500).json({ error: "Server error" });
   }
 };
+
+
+// ✅ Change Manager Password
+exports.changeManagerPassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const managerId = req.params.id;
+
+        // 🔎 Find the manager by ID
+        const manager = await Manager.findById(managerId);
+        if (!manager) {
+            return res.status(404).json({ success: false, message: 'Manager not found' });
+        }
+
+        // 🔒 Check if current password matches
+        if (manager.password !== currentPassword) {
+            return res.status(400).json({ success: false, message: 'Incorrect current password' });
+        }
+
+        // 🚫 Prevent using the same password again
+        if (currentPassword === newPassword) {
+            return res.status(400).json({ success: false, message: 'New password must be different from the current password' });
+        }
+
+        // ✅ Update password
+        manager.password = newPassword; // 🔐 Hashing should be applied in production
+        await manager.save();
+
+        res.status(200).json({ success: true, message: 'Password updated successfully' });
+    } catch (error) {
+        console.error('Error changing manager password:', error);
+        res.status(500).json({ success: false, message: 'Server error', error });
+    }
+};

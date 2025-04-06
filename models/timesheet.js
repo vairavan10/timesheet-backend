@@ -21,7 +21,8 @@ const timeSheetSchema = new mongoose.Schema({
   email: {  // ✅ Added email field
     type: String,
     
-  }
+  },
+  activity: { type: String, required: true }
 });
 
 module.exports = mongoose.model('TimeSheet', timeSheetSchema);

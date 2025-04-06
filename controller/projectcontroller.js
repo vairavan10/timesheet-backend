@@ -1,5 +1,4 @@
 const Project = require("../models/project");
-
 // Create a new project
 exports.createProject = async (req, res) => {
     const { name } = req.body;
@@ -52,5 +51,6 @@ exports.getProjectById = async (req, res) => {
         res.status(500).json({ message: 'Error fetching project', error });
     }
 };
+
 
 

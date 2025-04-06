@@ -14,6 +14,10 @@ connectDatabase();
 // Middleware
 app.use(express.json()); // Parses incoming JSON
 app.use(cors()); // Enables Cross-Origin Resource Sharing
+app.get('/test', (req, res) => {
+  res.json({ message: "Backend is working!" });
+});
+
 
 // Routes
 const userRoutes = require('./routes/userroutes');
@@ -37,6 +41,9 @@ app.use('/api/project', projectRoutes);
 
 const projectDetailsRoute = require('./routes/projectDetailsRoute');
 app.use('/api/projectdetails',projectDetailsRoute);
+
+const extraActivityRoutes = require('./routes/ExtraActivityRoutes');
+app.use('/api/extra-activities', extraActivityRoutes);
 // Server listener
 app.listen(process.env.PORT, () => {
   console.log(`✅ Server Listening on Port ${process.env.PORT} in ${process.env.NODE_ENV} mode`);

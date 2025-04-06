@@ -6,11 +6,11 @@ const mongoose = require("mongoose"); // ✅ Import Mongoose
 
 const createTimeSheet = async (req, res) => {
   try {
-    const { date, name, project, hours, workDone, email } = req.body;
+    const { date, name, project, hours, workDone, activity, email } = req.body;
 
     console.log("Received request body:", req.body);  // 🔍 Log request data
 
-    if (!date || !name || !project || !hours || !workDone || !email) {
+    if (!date || !name || !project || !hours || !workDone || activity || !email) {
       return res.status(400).json({ message: "All fields are required, including email" });
     }
 
@@ -31,6 +31,7 @@ const createTimeSheet = async (req, res) => {
       project: projectId,  // ✅ Store as ObjectId
       hours,
       workDone,
+      activity,
       email,
     });
 
@@ -141,13 +142,26 @@ const getUserTotalHours = async (req, res) => {
 const getProjectTotalHours = async (req, res) => {
   try {
     const { projectId } = req.params;
+    const { fromDate, toDate } = req.query; // Get the selected date range from query params
 
     if (!mongoose.Types.ObjectId.isValid(projectId)) {
       return res.status(400).json({ message: "Invalid Project ID" });
     }
 
+    // Build the date filter only if both dates are provided
+    let dateFilter = {};
+    if (fromDate && toDate) {
+      dateFilter = {
+        date: {
+          $gte: new Date(fromDate),
+          $lte: new Date(toDate),
+        },
+      };
+    }
+
+    // Fetch total hours based on date range
     const totalHours = await TimeSheet.aggregate([
-      { $match: { project: new mongoose.Types.ObjectId(projectId) } },
+      { $match: { project: new mongoose.Types.ObjectId(projectId), ...dateFilter } },
       { $group: { _id: null, totalHours: { $sum: "$hours" } } },
     ]);
 
@@ -161,6 +175,59 @@ const getProjectTotalHours = async (req, res) => {
   }
 };
 
+const getProjectUtilization = async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    const { fromDate, toDate } = req.query; // Extract date range
+
+    if (!mongoose.Types.ObjectId.isValid(projectId)) {
+      return res.status(400).json({ message: "Invalid Project ID" });
+    }
+
+    // Build the date filter if both dates are provided
+    let dateFilter = {};
+    if (fromDate && toDate) {
+      dateFilter = {
+        date: {
+          $gte: new Date(fromDate),
+          $lte: new Date(toDate),
+        },
+      };
+    }
+
+    // ✅ Calculate total hours for the specified project
+    const projectHours = await TimeSheet.aggregate([
+      { $match: { project: new mongoose.Types.ObjectId(projectId), ...dateFilter } },
+      { $group: { _id: null, totalHours: { $sum: "$hours" } } },
+    ]);
+
+    const totalProjectHours = projectHours.length > 0 ? projectHours[0].totalHours : 0;
+
+    // ✅ Calculate total hours for all projects
+    const allProjectsHours = await TimeSheet.aggregate([
+      { $match: dateFilter },
+      { $group: { _id: null, totalHours: { $sum: "$hours" } } },
+    ]);
+
+    const totalAllProjectsHours = allProjectsHours.length > 0 ? allProjectsHours[0].totalHours : 0;
+
+    // ✅ Compute Utilization Percentage
+    const utilization = totalAllProjectsHours > 0 
+      ? ((totalProjectHours / totalAllProjectsHours) * 100).toFixed(2) 
+      : 0;
+
+    res.status(200).json({
+      message: "Project utilization fetched successfully",
+      projectId,
+      totalProjectHours,
+      totalAllProjectsHours,
+      utilization: `${utilization}`,
+    });
+  } catch (error) {
+    console.error("Error fetching project utilization:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 // ✅ Export Controllers
 module.exports = {
   createTimeSheet,
@@ -168,4 +235,5 @@ module.exports = {
   getUserTimeSheets,
   getUserTotalHours,
   getProjectTotalHours,
+  getProjectUtilization,
 };

@@ -5,6 +5,7 @@ const {
   getUserTimeSheets,
   getUserTotalHours,
   getProjectTotalHours,
+  getProjectUtilization,
 } = require("../controller/timesheetcontroller");
 
 const router = express.Router();
@@ -20,5 +21,7 @@ router.get("/getusertimesheets", getUserTimeSheets);
 
 router.get("/getusertotalhours",getUserTotalHours);
 router.get('/total-hours/:projectId', getProjectTotalHours);
+router.get('/utilization-project/:projectId', getProjectUtilization);
+
 
 module.exports = router;

@@ -12,6 +12,7 @@ router.get('/', managerController.getAllManagers);
 
 // (Optional) ➡️ GET /api/managers/getmanager (if you really need it)
 router.get('/managers', managerController.getAllManagers);
+router.put('/:id/change-password', managerController.changeManagerPassword);
 
 // ===================== TEAM ROUTES =====================
 
