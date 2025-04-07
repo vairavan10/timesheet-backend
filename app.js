@@ -44,6 +44,10 @@ app.use('/api/projectdetails',projectDetailsRoute);
 
 const extraActivityRoutes = require('./routes/ExtraActivityRoutes');
 app.use('/api/extra-activities', extraActivityRoutes);
+const employeeLogRoutes = require('./routes/employeeSummaryRoute');
+
+app.use('/api/employeelog', employeeLogRoutes);
+
 // Server listener
 app.listen(process.env.PORT, () => {
   console.log(`✅ Server Listening on Port ${process.env.PORT} in ${process.env.NODE_ENV} mode`);

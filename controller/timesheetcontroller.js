@@ -122,23 +122,56 @@ const getAllTimeSheets = async (req, res) => {
 
     const skip = (page - 1) * limit;
 
-    const timeSheets = await TimeSheet.find()
-      .populate("project", "name")
-      .skip(skip)
-      .limit(limit)
-      .sort({ date: -1 });
+    const timeSheets = await TimeSheet.aggregate([
+      {
+        $lookup: {
+          from: "employees", // Make sure this is the correct collection name (should be lowercase plural of your model)
+          localField: "email",
+          foreignField: "email",
+          as: "employeeDetails",
+        },
+      },
+      {
+        $unwind: {
+          path: "$employeeDetails",
+          preserveNullAndEmptyArrays: true, // Still show even if no employee is matched
+        },
+      },
+      {
+        $lookup: {
+          from: "projects",
+          localField: "project",
+          foreignField: "_id",
+          as: "projectDetails",
+        },
+      },
+      {
+        $unwind: {
+          path: "$projectDetails",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $addFields: {
+          isLeave: { $eq: ["$typeOfWork", "Leave"] },
+        },
+      },
+      {
+        $sort: { date: -1 },
+      },
+      {
+        $skip: skip,
+      },
+      {
+        $limit: limit,
+      },
+    ]);
 
     const totalCount = await TimeSheet.countDocuments();
 
-    // ✅ Add isLeave flag
-    const enrichedSheets = timeSheets.map((sheet) => ({
-      ...sheet._doc,
-      isLeave: sheet.typeOfWork === "Leave",
-    }));
-
     res.status(200).json({
       message: "All timesheets fetched successfully",
-      data: enrichedSheets,
+      data: timeSheets,
       total: totalCount,
       page,
       limit,
@@ -148,6 +181,7 @@ const getAllTimeSheets = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 
 // ✅ Fetch Timesheets by User Email (With Pagination)
 const getUserTimeSheets = async (req, res) => {
