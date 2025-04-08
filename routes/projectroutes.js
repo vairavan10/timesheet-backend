@@ -5,8 +5,12 @@ const projectController = require('../controller/projectcontroller');
 router.get('/', projectController.getProject);
 
 router.post('/', projectController.createProject);
+router.get('/getProjectCount', projectController.getProjectCount);
+
 
 router.get('/:projectId', projectController.getProjectById);
+
+
 
 // You can add these later if needed
 // router.put('/:id', teamController.updateTeam);

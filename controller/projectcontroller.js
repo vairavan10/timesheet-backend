@@ -54,3 +54,17 @@ exports.getProjectById = async (req, res) => {
 
 
 
+exports.getProjectCount = async (req, res) => {
+    try {
+        const projectCount = await Project.countDocuments();
+
+        res.status(200).json({
+            message: 'Project count fetched successfully',
+            data: projectCount
+        });
+    } catch (error) {
+        console.error("Error fetching project count", error);
+        res.status(500).json({ message: 'Error fetching project count', error });
+    }
+};
+
