@@ -11,8 +11,15 @@ router.post('/', managerController.createManager);
 router.get('/', managerController.getAllManagers);
 
 // (Optional) ➡️ GET /api/managers/getmanager (if you really need it)
-router.get('/managers', managerController.getAllManagers);
+router.get('/', managerController.getAllManagers);
 router.put('/:id/change-password', managerController.changeManagerPassword);
+router.get("/:id",managerController.getManagerById);
+
+
+router.patch("/:id", managerController.updateManager);
+
+router.delete("/:id", managerController.deleteManager);
+
 
 // ===================== TEAM ROUTES =====================
 
@@ -24,5 +31,6 @@ router.post('/teams', managerController.createTeam);
 
 // 📄 Get team name of a manager ➡️ GET /api/managers/:managerId/team
 router.get('/:managerId/team', managerController.getTeamByManager);
+
 
 module.exports = router;

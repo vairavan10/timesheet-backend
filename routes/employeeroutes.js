@@ -6,10 +6,13 @@ const {
   getEmployeeCount,
   getEmployeeById,
   changeEmployeePassword,
+  getFullEmployees,
 } = require('../controller/employeecontroller');
 
 router.post('/addemployee', addEmployee);
 router.get('/list', getEmployees);
+router.get('/fulllist', getFullEmployees);
+
 router.get('/employee-count',getEmployeeCount);
 router.get("/:id", getEmployeeById);
 router.put('/:id/change-password', changeEmployeePassword);

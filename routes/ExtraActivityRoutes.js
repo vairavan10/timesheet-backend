@@ -10,4 +10,11 @@ router.post('/', ExtraActivity.addExtraActivity);
 // 📄 Get all extra activities ➡️ GET /api/extra-activities
 router.get('/', ExtraActivity.getExtraActivities);
 
+
+// PUT /api/extra-activities/:id
+router.put('/:id',ExtraActivity .updateActivity);
+router.delete('/:id', ExtraActivity.deleteActivity);
+
+
+
 module.exports = router;

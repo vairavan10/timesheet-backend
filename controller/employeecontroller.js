@@ -3,7 +3,7 @@ const Employee = require('../models/employees');
 // Add a new employee
 const addEmployee = async (req, res) => {
   try {
-    const { name, email, phone, role, designation, joiningDate, experience, skills, certification,password } = req.body;
+    const { name, email, phone, role, designation, joiningDate, experience, skills, certification,password ,managerId} = req.body;
 
     // Validate required fields
     if (!name || !email || !phone || !role || !designation || !joiningDate || experience === undefined||password) {
@@ -22,6 +22,7 @@ const addEmployee = async (req, res) => {
       skills,
       certification,
       password,
+      managerId,
     });
 
     res.status(201).json({
@@ -29,9 +30,10 @@ const addEmployee = async (req, res) => {
       data: newEmployee
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error adding employee', error });
+    console.error('Error adding employee:', error);
+    res.status(500).json({ message: 'Error adding employee', error: error.message || error });
   }
-};
+};  
 const getEmployeeById = async (req, res) => {
   try {
     const employee = await Employee.findById(req.params.id);
@@ -44,9 +46,9 @@ const getEmployeeById = async (req, res) => {
   }
 };
 // Fetch all employees
-const getEmployees = async (req, res) => {
+const getFullEmployees = async (req, res) => {
   try {
-    const employees = await Employee.find();
+    const employees = await Employee.find().populate('managerId', 'name email'); 
 
     res.status(200).json({
       message: 'Employees fetched successfully',
@@ -56,6 +58,45 @@ const getEmployees = async (req, res) => {
     res.status(500).json({ message: 'Error fetching employees', error });
   }
 };
+const getEmployees = async (req, res) => {
+  try {
+    const managerId = req.query.managerId; // Get managerId from query param
+
+    if (!managerId) {
+      return res.status(400).json({ message: 'Manager ID is required' });
+    }
+
+    const employees = await Employee.find({ managerId })
+      .populate('managerId', 'name email');
+
+    res.status(200).json({
+      message: 'Employees fetched successfully',
+      data: employees
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching employees', error });
+  }
+};
+// const getFullEmployees = async (req, res) => {
+//   try {
+//     // Fetch all employees and populate the managerId field with name and email
+//     const employees = await Employee.find().populate('managerId', 'name email');
+
+//     res.status(200).json({
+//       message: 'Employees fetched successfully',
+//       data: employees  // Returning employee data inside the 'data' field
+//     });
+//   } catch (error) {
+//     console.error('Error fetching employees:', error);
+
+//     res.status(500).json({
+//       message: 'Error fetching employee data',
+//       details: error.message || error
+//     });
+//   }
+// };
+
+
 
 // Fetch total employee count
 const getEmployeeCount = async (req, res) => {
@@ -103,4 +144,4 @@ const changeEmployeePassword = async (req, res) => {
 
 
 
-module.exports = { addEmployee, getEmployees, getEmployeeCount,getEmployeeById,changeEmployeePassword };
+module.exports = { addEmployee, getEmployees, getEmployeeCount,getEmployeeById,changeEmployeePassword,getFullEmployees };

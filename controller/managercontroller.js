@@ -85,7 +85,58 @@ exports.getAllManagers = async (req, res) => {
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
+exports.getManagerById = async (req, res) => {
+    try {
+      const manager = await Manager.findById(req.params.id).select("name email  team role");
+  
+      if (!manager) {
+        return res.status(404).json({ success: false, message: "Manager not found" });
+      }
+  
+      res.status(200).json({ success: true, manager });
+    } catch (error) {
+      console.error("Error fetching manager by ID:", error);
+      res.status(500).json({ success: false, message: "Server Error" });
+    }
+  };
 
+  // In your managerController.js
+
+exports.updateManager = async (req, res) => {
+    try {
+      const updatedManager = await Manager.findByIdAndUpdate(
+        req.params.id, // Manager ID from the request params
+        req.body, // The data to update (from the request body)
+        { new: true } // Return updated document and validate
+      );
+  
+      if (!updatedManager) {
+        return res.status(404).json({ success: false, message: "Manager not found" });
+      }
+  
+      res.status(200).json({ success: true, manager: updatedManager });
+    } catch (error) {
+      console.error("Error updating manager:", error);
+      res.status(500).json({ success: false, message: "Server Error" });
+    }
+  };
+  exports.deleteManager = async (req, res) => {
+    try {
+      // Find the manager by ID and remove
+      const manager = await Manager.findByIdAndDelete(req.params.id);
+      
+      if (!manager) {
+        return res.status(404).json({ success: false, message: "Manager not found" });
+      }
+      
+      // Return success response if manager was deleted
+      res.status(200).json({ success: true, message: "Manager deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting manager:", error);
+      res.status(500).json({ success: false, message: "Server Error" });
+    }
+  };
+  
 // ✅ Get Teams
 exports.getTeams = async (req, res) => {
     try {
@@ -112,6 +163,47 @@ exports.createTeam = async (req, res) => {
         res.status(201).json({ success: true, message: 'Team created successfully!' });
     } catch (error) {
         console.error('Error creating team:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+exports.deleteTeam = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const deletedTeam = await Team.findByIdAndDelete(id);
+
+        if (!deletedTeam) {
+            return res.status(404).json({ success: false, message: 'Team not found' });
+        }
+
+        res.status(200).json({ success: true, message: 'Team deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting team:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+exports.updateTeam = async (req, res) => {
+    const { id } = req.params;
+    const { name } = req.body;
+
+    if (!name || name.trim() === '') {
+        return res.status(400).json({ success: false, message: 'Team name is required' });
+    }
+
+    try {
+        const updatedTeam = await Team.findByIdAndUpdate(
+            id,
+            { name },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedTeam) {
+            return res.status(404).json({ success: false, message: 'Team not found' });
+        }
+
+        res.status(200).json({ success: true, message: 'Team updated successfully', team: updatedTeam });
+    } catch (error) {
+        console.error('Error updating team:', error);
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };
