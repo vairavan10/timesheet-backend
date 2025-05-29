@@ -12,7 +12,7 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    const user = new User({ email, password, role });
+    const user = new User({ email, password, role,name });
     await user.save();
 
     res.status(201).json({
@@ -21,6 +21,7 @@ const registerUser = async (req, res) => {
         id: user._id,
         email: user.email,
         role: user.role,
+        name:user.name,
       },
     });
   } catch (error) {
@@ -64,7 +65,8 @@ const loginUser = async (req, res) => {
     ) {
       return res.status(400).json({ message: "Incorrect password" });
     }
-
+    const userName = user?.name ?? manager?.name ?? employee?.name;
+    console.log("User name:", userName);
     // Respond with the correct user details (user, manager, or employee)
     res.status(200).json({
       message: "Login successful",
@@ -72,6 +74,7 @@ const loginUser = async (req, res) => {
         id: user?._id ?? manager?._id ?? employee._id, // Get ID from whichever model exists
         email: user?.email ?? manager?.email ?? employee.email,
         role: user?.role ?? manager?.role ?? employee?.role ?? "user", // Default role is "user" if none
+        name: user?.name ?? manager?.name ?? employee?.name,
       },
     });
   } catch (error) {

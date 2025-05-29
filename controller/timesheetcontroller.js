@@ -59,7 +59,27 @@ const createTimeSheet = async (req, res) => {
     // ----------------------
     // 🟩 REGULAR / EXTRA ACTIVITY
     // ----------------------
-    if (!hours || !workDone) {
+
+    let calculatedHours = hours;
+
+if (!hours && req.body.startTime && req.body.endTime) {
+  const start = new Date(req.body.startTime);
+  const end = new Date(req.body.endTime);
+
+  if (isNaN(start) || isNaN(end)) {
+    return res.status(400).json({ message: "Invalid startTime or endTime" });
+  }
+
+  const durationInMs = end - start;
+  if (durationInMs <= 0) {
+    return res.status(400).json({ message: "endTime must be after startTime" });
+  }
+
+  calculatedHours = +(durationInMs / (1000 * 60 * 60)).toFixed(2); // in hours
+}
+
+if (!calculatedHours || !workDone)
+ {
       return res.status(400).json({ message: "Missing hours or workDone for regular entry" });
     }
     
@@ -91,7 +111,7 @@ const createTimeSheet = async (req, res) => {
       date,
       name,
       project: projectId,
-      hours,
+      hours: calculatedHours,
       workDone,
       extraActivity: extraActivity || null,
       email,

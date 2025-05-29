@@ -52,12 +52,9 @@ exports.getProjectById = async (req, res) => {
     }
 };
 
-
-
 exports.getProjectCount = async (req, res) => {
     try {
         const projectCount = await Project.countDocuments();
-
         res.status(200).json({
             message: 'Project count fetched successfully',
             data: projectCount
