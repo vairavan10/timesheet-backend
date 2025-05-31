@@ -1,4 +1,5 @@
 const express = require('express');
+const upload = require('../helper/multer'); 
 const router = express.Router();
 
 const {
@@ -9,7 +10,7 @@ const {
   getFullEmployees,
 } = require('../controller/employeecontroller');
 
-router.post('/addemployee', addEmployee);
+router.post('/addemployee',upload.single('image'), addEmployee);
 router.get('/list', getEmployees);
 router.get('/fulllist', getFullEmployees);
 

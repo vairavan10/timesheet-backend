@@ -4,22 +4,30 @@ const dotenv = require("dotenv");
 const path = require("path");
 const cors = require("cors");
 const connectDatabase = require('./config/connectdatabase');
+const fs = require("fs"); 
 
-// Load env vars (Good practice!)
 dotenv.config({ path: path.join(__dirname, 'config', "config.env") });
 
-// Connect to database
-connectDatabase();
 
-// Middleware
-app.use(express.json()); // Parses incoming JSON
-app.use(cors()); // Enables Cross-Origin Resource Sharing
+connectDatabase();
+// Ensure 'uploads' folder exists
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+  setHeaders: (res) => {
+    res.set('Access-Control-Allow-Origin', '*');
+  }
+}));
+
+app.use(express.json()); 
+app.use(cors()); 
 app.get('/test', (req, res) => {
   res.json({ message: "Backend is working!" });
 });
 
 
-// Routes
 const userRoutes = require('./routes/userroutes');
 app.use('/api/users', userRoutes);
 
@@ -48,7 +56,7 @@ const employeeLogRoutes = require('./routes/employeeSummaryRoute');
 
 app.use('/api/employeelog', employeeLogRoutes);
 
-// Server listener
+
 app.listen(process.env.PORT, () => {
-  console.log(`✅ Server Listening on Port ${process.env.PORT} in ${process.env.NODE_ENV} mode`);
+  console.log(`Server Listening on Port ${process.env.PORT} in ${process.env.NODE_ENV} mode`);
 });

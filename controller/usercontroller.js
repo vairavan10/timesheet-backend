@@ -1,8 +1,8 @@
 const User = require("../models/user");
-const ADMIN = require("../config/admin"); // ✅ Import the admin credentials
+const ADMIN = require("../config/admin"); 
 const Manager=require("../models/manager");
 const Employee=require("../models/employees");
-// REGISTER USER (No changes needed)
+
 const registerUser = async (req, res) => {
   const { email, password, role } = req.body;
 
@@ -30,12 +30,12 @@ const registerUser = async (req, res) => {
   }
 };
 
-// LOGIN USER (With admin check)
+
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // ✅ Admin Login Check
+
     if (email === ADMIN?.email && password === ADMIN?.password) {
       return res.status(200).json({
         message: "Admin login successful",
@@ -47,17 +47,15 @@ const loginUser = async (req, res) => {
       });
     }
 
-    // ✅ Regular user login
     const user = await User.findOne({ email });
     const manager = await Manager.findOne({ email });
-    const employee = await Employee.findOne({ email }); // ✅ Add Employee check
+    const employee = await Employee.findOne({ email }); 
 
-    // If user, manager, or employee not found
     if (!user && !manager && !employee) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Check if the password matches for user, manager, or employee
+
     if (
       (user && user.password !== password) ||
       (manager && manager.password !== password) ||
@@ -67,13 +65,13 @@ const loginUser = async (req, res) => {
     }
     const userName = user?.name ?? manager?.name ?? employee?.name;
     console.log("User name:", userName);
-    // Respond with the correct user details (user, manager, or employee)
+
     res.status(200).json({
       message: "Login successful",
       user: {
-        id: user?._id ?? manager?._id ?? employee._id, // Get ID from whichever model exists
+        id: user?._id ?? manager?._id ?? employee._id, 
         email: user?.email ?? manager?.email ?? employee.email,
-        role: user?.role ?? manager?.role ?? employee?.role ?? "user", // Default role is "user" if none
+        role: user?.role ?? manager?.role ?? employee?.role ?? "user", 
         name: user?.name ?? manager?.name ?? employee?.name,
       },
     });

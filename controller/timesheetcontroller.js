@@ -136,16 +136,30 @@ if (!calculatedHours || !workDone)
 // ✅ Fetch All Timesheets (With Pagination & Sorting)
 const getAllTimeSheets = async (req, res) => {
   try {
-    let { page = 1, limit = 10 } = req.query;
+    let { page = 1, limit = 10, fromDate, toDate } = req.query;
     page = parseInt(page);
     limit = parseInt(limit);
 
     const skip = (page - 1) * limit;
 
+    // Build a filter object
+const matchFilter = {};
+if (fromDate && toDate) {
+  matchFilter.date = {
+    $gte: new Date(fromDate),
+    $lte: new Date(toDate),
+  };
+} else if (fromDate) {
+  matchFilter.date = { $gte: new Date(fromDate) };
+} else if (toDate) {
+  matchFilter.date = { $lte: new Date(toDate) };
+}
+
     const timeSheets = await TimeSheet.aggregate([
+      { $match: matchFilter }, // Apply date filter here
       {
         $lookup: {
-          from: "employees", // Make sure this is the correct collection name (should be lowercase plural of your model)
+          from: "employees",
           localField: "email",
           foreignField: "email",
           as: "employeeDetails",
@@ -154,7 +168,7 @@ const getAllTimeSheets = async (req, res) => {
       {
         $unwind: {
           path: "$employeeDetails",
-          preserveNullAndEmptyArrays: true, // Still show even if no employee is matched
+          preserveNullAndEmptyArrays: true,
         },
       },
       {
@@ -187,7 +201,8 @@ const getAllTimeSheets = async (req, res) => {
       },
     ]);
 
-    const totalCount = await TimeSheet.countDocuments();
+    // Count total matching documents (with date filter)
+    const totalCount = await TimeSheet.countDocuments(matchFilter);
 
     res.status(200).json({
       message: "All timesheets fetched successfully",
@@ -201,6 +216,7 @@ const getAllTimeSheets = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 
 
 // ✅ Fetch Timesheets by User Email (With Pagination)

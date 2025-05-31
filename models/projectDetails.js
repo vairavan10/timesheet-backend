@@ -5,12 +5,12 @@ const ProjectDetailsSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Project', 
     required: true 
-  }, // Reference to the Project
+  }, 
 
-  fromDate: { type: Date, required: true },  // Add fromDate field
-  toDate: { type: Date, required: true },    // Add toDate field
+  fromDate: { type: Date, required: true }, 
+  toDate: { type: Date, required: true },    
 
-  dependencies: { type: String, required: true }, // Text Area Input
+  dependencies: { type: String, required: true }, 
   hoursSpent: { type: Number, required: true },
   utilization: { type: String, required: true },
   status: { type: String, required: true },

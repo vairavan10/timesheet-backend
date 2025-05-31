@@ -16,7 +16,8 @@ const employeeSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Manager',
       required: false
-    }
+    },
+    image: { type: String, default: null } 
   },
   {
     timestamps: true

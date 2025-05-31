@@ -9,6 +9,13 @@ const addEmployee = async (req, res) => {
     if (!name || !email || !phone || !role || !designation || !joiningDate || experience === undefined||password) {
       return res.status(400).json({ message: 'All fields are required' });
     }
+    console.log("req.body",req)
+    let imagePath = null;
+
+    if (req.file) {
+      console.log("i am having image....",req.file)
+      imagePath = req.file.path; // or req.file.filename depending on your multer config
+    }
 
     // Create new employee record
     const newEmployee = await Employee.create({
@@ -23,6 +30,7 @@ const addEmployee = async (req, res) => {
       certification,
       password,
       managerId,
+      image: imagePath,
     });
 
     res.status(201).json({

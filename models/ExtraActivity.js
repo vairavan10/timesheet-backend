@@ -17,6 +17,6 @@ const extraActivitySchema = new mongoose.Schema({
   }
 });
 
-// Prevent model overwrite error during hot reloads
+
 module.exports = mongoose.models.ExtraActivity || mongoose.model('ExtraActivity', extraActivitySchema);
-// module.exports = mongoose.model('ExtraActivity', extraActivitySchema);
+
