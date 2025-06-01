@@ -7,17 +7,19 @@ const {
   getProjectTotalHours,
   getProjectUtilization,
   getUserProjectHours,
+  uploadTimesheet,
 } = require("../controller/timesheetcontroller");
 
 const router = express.Router();
 
-// ✅ Create a new timesheet
-router.post("/addtimesheet", createTimeSheet);
 
-// ✅ Fetch all timesheets (Admin only)
+router.post("/addtimesheet", createTimeSheet);
+router.post("/upload-timesheet", uploadTimesheet);
+
+
 router.get("/getalltimesheets", getAllTimeSheets);
 
-// ✅ Fetch user-specific timesheets (Based on email)
+
 router.get("/getusertimesheets", getUserTimeSheets);
 
 router.get("/getusertotalhours",getUserTotalHours);

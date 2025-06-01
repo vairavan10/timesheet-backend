@@ -131,6 +131,35 @@ if (!calculatedHours || !workDone)
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+const uploadTimesheet = async (req, res) => {
+  try {
+    const { timesheetData } = req.body;
+
+    if (!Array.isArray(timesheetData) || timesheetData.length === 0) {
+      return res.status(400).json({ message: "No timesheet data provided." });
+    }
+
+    const formattedData = timesheetData.map((entry) => ({
+      name: entry.name || null,
+      email: entry.email || null,
+      date: entry.date ? new Date(entry.date) : null,
+      hours: Number(entry.hours) || 0,
+      project: entry.project ? new mongoose.Types.ObjectId(entry.project) : null,
+      workDone: entry.workDone || null,
+      typeOfWork: entry.typeOfWork || null,
+      extraActivity: entry.extraActivity || null,
+      leaveType: entry.leaveType || null,
+    }));
+
+    await TimeSheet.insertMany(formattedData);
+
+    return res.status(200).json({ message: "Timesheet data uploaded successfully." });
+  } catch (error) {
+    console.error("Upload error:", error);
+    return res.status(500).json({ message: "Server error while uploading." });
+  }
+};
+
 
 
 // ✅ Fetch All Timesheets (With Pagination & Sorting)
@@ -436,4 +465,5 @@ module.exports = {
   getProjectTotalHours,
   getProjectUtilization,
   getUserProjectHours,
+  uploadTimesheet,
 };
